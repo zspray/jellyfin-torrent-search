@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Torrent Search PT-BR</title>
+    <style>
+        .torrentConfigForm {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .torrentConfigForm .inputContainer {
+            margin-bottom: 1.5em;
+        }
+        .torrentConfigForm label {
+            display: block;
+            margin-bottom: 0.4em;
+            font-weight: 600;
+        }
+        .torrentConfigForm input[type="text"],
+        .torrentConfigForm input[type="password"],
+        .torrentConfigForm input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.3);
+            color: inherit;
+            font-size: 14px;
+        }
+        .torrentConfigForm .fieldDescription {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+        .sectionTitle {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+            margin-top: 2em;
+        }
+        .checkboxContainer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="TorrentSearchConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-button,emby-checkbox">
+
+        <div data-role="content">
+            <div class="content-primary">
+                <h2>🎬 Torrent Search PT-BR</h2>
+                <p>Busque torrents diretamente do Jellyfin sem precisar de nenhum serviço externo.</p>
+
+                <form class="torrentConfigForm">
+                    <h3 class="sectionTitle">🔍 Configuração de Busca</h3>
+
+                    <div class="inputContainer">
+                        <label for="txtX1337Domain">Domínio do 1337x</label>
+                        <input type="text" id="txtX1337Domain" is="emby-input" />
+                        <div class="fieldDescription">Domínio atual do 1337x (ex: 1337x.to). Altere se o site mudar de endereço.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label for="txtMaxResults">Máximo de resultados</label>
+                        <input type="number" id="txtMaxResults" min="5" max="100" is="emby-input" />
+                        <div class="fieldDescription">Quantidade máxima de resultados por busca (5-100).</div>
+                    </div>
+
+                    <div class="inputContainer checkboxContainer">
+                        <input type="checkbox" id="chkPtBrOnly" is="emby-checkbox" />
+                        <label for="chkPtBrOnly">Mostrar apenas resultados PT-BR</label>
+                    </div>
+
+                    <h3 class="sectionTitle">📥 qBittorrent (Opcional)</h3>
+                    <p style="opacity:0.7;font-size:13px;">Configure para enviar torrents diretamente para download.</p>
+
+                    <div class="inputContainer">
+                        <label for="txtQBitUrl">URL do qBittorrent</label>
+                        <input type="text" id="txtQBitUrl" placeholder="http://localhost:8080" is="emby-input" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label for="txtQBitUser">Usuário</label>
+                        <input type="text" id="txtQBitUser" placeholder="admin" is="emby-input" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label for="txtQBitPassword">Senha</label>
+                        <input type="password" id="txtQBitPassword" is="emby-input" />
+                    </div>
+
+                    <div class="inputContainer">
+                        <label for="txtDownloadPath">Pasta de download</label>
+                        <input type="text" id="txtDownloadPath" placeholder="/downloads/movies" is="emby-input" />
+                        <div class="fieldDescription">Pasta onde os torrents serão salvos (deixe vazio para usar o padrão do qBittorrent).</div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block">
+                            <span>Salvar</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            var TorrentSearchConfig = {
+                pluginUniqueId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+            };
+
+            document.querySelector('.torrentConfigForm')
+                .addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+
+                    ApiClient.getPluginConfiguration(TorrentSearchConfig.pluginUniqueId).then(function (config) {
+                        config.X1337Domain = document.getElementById('txtX1337Domain').value;
+                        config.MaxResults = parseInt(document.getElementById('txtMaxResults').value) || 40;
+                        config.PtBrOnly = document.getElementById('chkPtBrOnly').checked;
+                        config.QBitUrl = document.getElementById('txtQBitUrl').value;
+                        config.QBitUser = document.getElementById('txtQBitUser').value;
+                        config.QBitPassword = document.getElementById('txtQBitPassword').value;
+                        config.DownloadPath = document.getElementById('txtDownloadPath').value;
+
+                        ApiClient.updatePluginConfiguration(TorrentSearchConfig.pluginUniqueId, config).then(function () {
+                            Dashboard.processPluginConfigurationUpdateResult();
+                        });
+                    });
+                });
+
+            document.addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(TorrentSearchConfig.pluginUniqueId).then(function (config) {
+                    document.getElementById('txtX1337Domain').value = config.X1337Domain || '1337x.to';
+                    document.getElementById('txtMaxResults').value = config.MaxResults || 40;
+                    document.getElementById('chkPtBrOnly').checked = config.PtBrOnly || false;
+                    document.getElementById('txtQBitUrl').value = config.QBitUrl || '';
+                    document.getElementById('txtQBitUser').value = config.QBitUser || 'admin';
+                    document.getElementById('txtQBitPassword').value = config.QBitPassword || '';
+                    document.getElementById('txtDownloadPath').value = config.DownloadPath || '';
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>

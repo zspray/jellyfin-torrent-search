@@ -1,0 +1,19 @@
+{
+  "name": "jellyfin-torrent-search",
+  "version": "1.0.0",
+  "description": "Plugin Jellyfin para busca de torrents PT-BR com integração Jackett",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.7.0",
+    "xml2js": "^0.6.2",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "keywords": ["jellyfin", "torrent", "jackett", "pt-br"],
+  "license": "MIT"
+}

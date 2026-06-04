@@ -1,0 +1,99 @@
+name: Build & Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore JellyfinTorrentSearch/JellyfinTorrentSearch.csproj
+
+      - name: Build
+        run: dotnet publish JellyfinTorrentSearch/JellyfinTorrentSearch.csproj -c Release -o ./output --no-restore
+
+      - name: Prepare plugin zip
+        run: |
+          cd output
+          # Remove arquivos do Jellyfin SDK (já existem no servidor)
+          rm -f Jellyfin.*.dll Microsoft.Extensions.*.dll System.*.dll
+          # Cria o zip com apenas os arquivos necessários
+          zip -j ../jellyfin-torrent-search-${{ github.ref_name }}.zip \
+            JellyfinTorrentSearch.dll \
+            HtmlAgilityPack.dll \
+            JellyfinTorrentSearch.deps.json
+
+      - name: Calculate MD5 checksum
+        id: checksum
+        run: |
+          CHECKSUM=$(md5sum jellyfin-torrent-search-${{ github.ref_name }}.zip | awk '{print $1}')
+          echo "md5=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "Checksum: $CHECKSUM"
+
+      - name: Update manifest.json
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_CLEAN="${VERSION#v}"  # Remove o 'v' do prefixo
+          CHECKSUM="${{ steps.checksum.outputs.md5 }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          REPO="${{ github.repository }}"
+          
+          # Usa jq para atualizar o manifest
+          jq --arg ver "${VERSION_CLEAN}.0" \
+             --arg url "https://github.com/${REPO}/releases/download/${VERSION}/jellyfin-torrent-search-${VERSION}.zip" \
+             --arg cs "$CHECKSUM" \
+             --arg ts "$TIMESTAMP" \
+             --arg cl "Release ${VERSION}" \
+             '.[0].versions = [{
+               "version": $ver,
+               "changelog": $cl,
+               "targetAbi": "10.10.0.0",
+               "sourceUrl": $url,
+               "checksum": $cs,
+               "timestamp": $ts
+             }] + .[0].versions' manifest.json > manifest_tmp.json
+          
+          mv manifest_tmp.json manifest.json
+          cat manifest.json
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "chore: atualiza manifest para ${{ github.ref_name }}" || true
+          git push origin HEAD:main || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: jellyfin-torrent-search-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          body: |
+            ## 🎬 Torrent Search PT-BR - ${{ github.ref_name }}
+            
+            ### Instalação via Catálogo do Jellyfin
+            1. Vá em **Painel → Plugins → Repositórios → ➕**
+            2. Cole a URL: `https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json`
+            3. Vá na aba **Catálogo** e instale "Torrent Search PT-BR"
+            
+            ### Instalação Manual
+            1. Baixe o `.zip` abaixo
+            2. Extraia na pasta `plugins/TorrentSearch/` do Jellyfin
+            3. Reinicie o Jellyfin
+            
+            **Checksum MD5:** `${{ steps.checksum.outputs.md5 }}`

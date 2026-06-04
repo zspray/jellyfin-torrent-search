@@ -1,0 +1,23 @@
+# Build
+bin/
+obj/
+dist/
+output/
+*.zip
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Node (arquivos antigos do backend)
+node_modules/
+package-lock.json
+
+# Env
+.env
+
+# OS
+Thumbs.db
+.DS_Store
