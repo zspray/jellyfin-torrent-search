@@ -23,6 +23,16 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool PtBrOnly { get; set; } = false;
 
     /// <summary>
+    /// Domínio da RedeTorrent (ou outro site WP similar).
+    /// </summary>
+    public string RedeTorrentDomain { get; set; } = "redetorrent.com";
+
+    /// <summary>
+    /// Usar a RedeTorrent na busca.
+    /// </summary>
+    public bool UseRedeTorrent { get; set; } = true;
+
+    /// <summary>
     /// URL do qBittorrent (opcional, para download direto).
     /// </summary>
     public string QBitUrl { get; set; } = string.Empty;

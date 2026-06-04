@@ -54,8 +54,28 @@ public class TorrentSearchController : ControllerBase
         var config = Plugin.Instance?.Configuration;
         var maxResults = config?.MaxResults ?? 40;
 
-        var scraper = new X1337Scraper(_logger, _httpClientFactory);
-        var results = await scraper.SearchAsync(query, category, maxResults, ct);
+        var tasks = new List<Task<List<TorrentResult>>>();
+        
+        // 1337x Scraper
+        var scraper1337 = new X1337Scraper(_logger, _httpClientFactory);
+        tasks.Add(scraper1337.SearchAsync(query, category, maxResults, ct));
+
+        // RedeTorrent Scraper
+        if (config == null || config.UseRedeTorrent)
+        {
+            var redeScraper = new RedeTorrentScraper(_logger, _httpClientFactory);
+            var redeDomain = config?.RedeTorrentDomain ?? "redetorrent.com";
+            tasks.Add(redeScraper.SearchAsync(query, redeDomain, 10, ct));
+        }
+
+        var resultsArrays = await Task.WhenAll(tasks);
+        var results = resultsArrays.SelectMany(x => x).ToList();
+
+        // Ordena: PT-BR primeiro, depois por seeders (RedeTorrent sempre tem IsPtBr=true e seeders altos artificiais para ficar no topo)
+        results = results
+            .OrderByDescending(r => r.IsPtBr)
+            .ThenByDescending(r => r.Seeders)
+            .ToList();
 
         // Filtra só PT-BR se configurado
         if (config?.PtBrOnly == true)
