@@ -1,13 +1,12 @@
 /**
- * Jellyfin Torrent Search PT-BR
+ * Jellyfin Torrent Search PT-BR v2.0
  * 
  * Script injetado automaticamente pelo plugin.
- * Usa a API interna do Jellyfin (/Torrents/Search) - zero dependências externas.
+ * Inclui Autocomplete via IMDb e integração com API C#.
  */
 (function () {
     'use strict';
 
-    // Cores e design
     var C = {
         ACCENT: '#7B2FF7',
         GRAD: 'linear-gradient(135deg, #7B2FF7, #C850C0, #FF6B9D)',
@@ -32,7 +31,6 @@
         setTimeout(function () { t.remove(); }, 4000);
     }
 
-    // Busca usando a API interna do Jellyfin (autenticação já incluída via cookie de sessão)
     function apiSearch(query, category) {
         var url = ApiClient.getUrl('Torrents/Search', { query: query, category: category || 'Movies' });
         return ApiClient.getJSON(url);
@@ -48,7 +46,6 @@
         });
     }
 
-    // Injeta CSS
     function injectCSS() {
         if (document.getElementById('jts-css')) return;
         var s = document.createElement('style');
@@ -63,17 +60,26 @@
             ".jts-btn:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(123,47,247,.5)}",
 
             ".jts-ov{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);display:flex;justify-content:center;align-items:flex-start;padding:40px 20px;overflow-y:auto;animation:jtsIn .3s}",
-            ".jts-m{width:100%;max-width:900px;background:" + C.BG + ";border:1px solid " + C.BORDER + ";border-radius:20px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.6);animation:jtsSlideUp .4s;font-family:Inter,sans-serif}",
+            ".jts-m{width:100%;max-width:900px;background:" + C.BG + ";border:1px solid " + C.BORDER + ";border-radius:20px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.6);animation:jtsSlideUp .4s;font-family:Inter,sans-serif;overflow:visible}",
 
             ".jts-hd{background:" + C.GRAD + ";padding:24px 28px;display:flex;justify-content:space-between;align-items:center}",
             ".jts-hd h2{margin:0;color:#fff;font-size:20px;font-weight:700}",
             ".jts-x{background:rgba(255,255,255,.2);border:none;width:36px;height:36px;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}",
             ".jts-x:hover{background:rgba(255,255,255,.35)}",
 
-            ".jts-sb{padding:20px 28px;display:flex;gap:10px;border-bottom:1px solid " + C.BORDER + ";flex-wrap:wrap}",
-            ".jts-si{flex:1;min-width:200px;padding:12px 16px;background:" + C.SURFACE + ";border:1px solid " + C.BORDER + ";border-radius:10px;color:" + C.TXT + ";font-size:14px;font-family:Inter,sans-serif;outline:none;transition:border-color .2s}",
+            ".jts-sb{padding:20px 28px;display:flex;gap:10px;border-bottom:1px solid " + C.BORDER + ";flex-wrap:wrap;overflow:visible}",
+            ".jts-si{width:100%;padding:12px 16px;background:" + C.SURFACE + ";border:1px solid " + C.BORDER + ";border-radius:10px;color:" + C.TXT + ";font-size:14px;font-family:Inter,sans-serif;outline:none;transition:border-color .2s}",
             ".jts-si:focus{border-color:" + C.ACCENT + "}",
             ".jts-si::placeholder{color:" + C.TXT2 + "}",
+            
+            /* Autocomplete */
+            ".jts-ac{position:absolute;top:100%;left:0;right:0;background:" + C.SURFACE + ";border:1px solid " + C.BORDER + ";border-radius:10px;margin-top:4px;z-index:100000;max-height:300px;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5)}",
+            ".jts-ac-i{padding:12px 16px;cursor:pointer;display:flex;flex-direction:column;border-bottom:1px solid " + C.BORDER + ";transition:background .2s}",
+            ".jts-ac-i:last-child{border-bottom:none}",
+            ".jts-ac-i:hover{background:" + C.CARD + "}",
+            ".jts-ac-t{font-size:14px;color:" + C.TXT + ";font-weight:600}",
+            ".jts-ac-y{font-size:12px;color:" + C.TXT2 + ";margin-top:4px}",
+
             ".jts-sel{padding:12px 14px;background:" + C.SURFACE + ";border:1px solid " + C.BORDER + ";border-radius:10px;color:" + C.TXT + ";font-size:13px;font-family:Inter,sans-serif;cursor:pointer;outline:none}",
             ".jts-go{padding:12px 24px;border:none;border-radius:10px;background:" + C.GRAD + ";color:#fff;font-weight:600;font-size:14px;cursor:pointer;font-family:Inter,sans-serif;transition:opacity .2s}",
             ".jts-go:hover{opacity:.9}.jts-go:disabled{opacity:.5;cursor:not-allowed}",
@@ -99,6 +105,7 @@
             ".jts-mi{display:flex;align-items:center;gap:4px;font-size:12px;color:" + C.TXT2 + "}",
             ".jts-mi .s{color:#2ED573;font-weight:600}",
             ".jts-mi .l{color:#FF4757;font-weight:600}",
+            ".jts-mi .src{color:#E8E8F0;font-weight:600;background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;}",
             ".jts-ra{margin-left:auto;display:flex;gap:6px}",
             ".jts-db{padding:6px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;transition:all .2s}",
             ".jts-dm{background:rgba(123,47,247,.15);color:#B57BFF}",
@@ -115,7 +122,6 @@
         document.head.appendChild(s);
     }
 
-    // Modal de busca
     function openModal(title) {
         if (document.querySelector('.jts-ov')) return;
         var ov = document.createElement('div');
@@ -123,9 +129,12 @@
         ov.onclick = function (e) { if (e.target === ov) ov.remove(); };
 
         ov.innerHTML = '<div class="jts-m">' +
-            '<div class="jts-hd"><h2>\uD83D\uDD0D Buscar Torrents</h2><button class="jts-x">\u2715</button></div>' +
+            '<div class="jts-hd"><h2>\uD83D\uDD0D Buscar Torrents (v2.0)</h2><button class="jts-x">\u2715</button></div>' +
             '<div class="jts-sb">' +
-                '<input class="jts-si" type="text" placeholder="Nome do filme ou s\u00e9rie..." value="' + esc(title || '') + '">' +
+                '<div style="flex:1;position:relative;min-width:200px">' +
+                    '<input class="jts-si" type="text" placeholder="Nome do filme ou s\u00e9rie..." value="' + esc(title || '') + '" autocomplete="off">' +
+                    '<div class="jts-ac" style="display:none"></div>' +
+                '</div>' +
                 '<select class="jts-sel" id="jts-cat">' +
                     '<option value="Movies">\uD83C\uDFAC Filmes</option>' +
                     '<option value="TV">\uD83D\uDCFA S\u00e9ries</option>' +
@@ -142,25 +151,81 @@
                 '<button class="jts-fc" data-f="720p">720p</button>' +
                 '<span class="jts-st"></span>' +
             '</div>' +
-            '<div class="jts-rs"><div class="jts-em"><div class="jts-ei">\uD83C\uDFAC</div><p>Digite o nome do filme e clique em <b>Buscar</b></p></div></div>' +
+            '<div class="jts-rs"><div class="jts-em"><div class="jts-ei">\uD83C\uDFAC</div><p>Digite o nome do filme e aguarde as sugest\u00f5es!</p></div></div>' +
         '</div>';
 
         document.body.appendChild(ov);
 
         var closeBtn = ov.querySelector('.jts-x');
         var input = ov.querySelector('.jts-si');
+        var acDiv = ov.querySelector('.jts-ac');
         var goBtn = ov.querySelector('.jts-go');
         var filtersDiv = ov.querySelector('.jts-fl');
         var resultsDiv = ov.querySelector('.jts-rs');
         var statsSpan = ov.querySelector('.jts-st');
         var allResults = [];
+        var acTimeout;
 
         closeBtn.onclick = function () { ov.remove(); };
         document.addEventListener('keydown', function escH(e) {
             if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', escH); }
         });
-        input.addEventListener('keypress', function (e) { if (e.key === 'Enter') doSearch(); });
-        goBtn.onclick = doSearch;
+
+        // ==========================================
+        // AUTOCOMPLETE ENGINE (IMDb)
+        // ==========================================
+        input.addEventListener('input', function() {
+            clearTimeout(acTimeout);
+            var val = input.value.trim();
+            if (val.length < 2) {
+                acDiv.style.display = 'none';
+                return;
+            }
+            acTimeout = setTimeout(function() {
+                var firstChar = val.charAt(0).toLowerCase();
+                if (!/[a-z0-9]/.test(firstChar)) firstChar = 'a';
+                
+                // IMDb public suggestion API (no key required, super fast)
+                var url = 'https://v3.sg.media-imdb.com/suggestion/x/' + firstChar + '/' + encodeURIComponent(val) + '.json';
+                
+                fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+                    var items = data.d || [];
+                    // Filter out video games and actors, keep movies and TV
+                    items = items.filter(function(i){ return i.q && (i.q === 'feature' || i.q.indexOf('TV') >= 0 || i.q === 'TV mini-series'); });
+                    if (items.length === 0) {
+                        acDiv.style.display = 'none';
+                        return;
+                    }
+                    acDiv.innerHTML = items.map(function(i) {
+                        var typeStr = i.q === 'feature' ? '\uD83C\uDFAC Filme' : '\uD83D\uDCFA S\u00e9rie';
+                        return '<div class="jts-ac-i" data-title="' + esc(i.l) + '">' +
+                               '<div class="jts-ac-t">' + esc(i.l) + ' (' + (i.y || 'N/A') + ')</div>' +
+                               '<div class="jts-ac-y">' + typeStr + ' &bull; ' + esc(i.s || 'Sem elenco listado') + '</div>' +
+                               '</div>';
+                    }).join('');
+                    acDiv.style.display = 'block';
+                }).catch(function() { acDiv.style.display = 'none'; });
+            }, 400); // 400ms debounce
+        });
+
+        // Click on autocomplete item
+        acDiv.addEventListener('click', function(e) {
+            var item = e.target.closest('.jts-ac-i');
+            if (!item) return;
+            input.value = item.dataset.title;
+            acDiv.style.display = 'none';
+            doSearch();
+        });
+        
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!acDiv.contains(e.target) && e.target !== input) {
+                acDiv.style.display = 'none';
+            }
+        });
+
+        input.addEventListener('keypress', function (e) { if (e.key === 'Enter') { acDiv.style.display='none'; doSearch(); } });
+        goBtn.onclick = function() { acDiv.style.display='none'; doSearch(); };
 
         filtersDiv.onclick = function (e) {
             var chip = e.target.closest('.jts-fc');
@@ -176,7 +241,7 @@
             var cat = document.getElementById('jts-cat').value;
             goBtn.disabled = true;
             goBtn.textContent = 'Buscando...';
-            resultsDiv.innerHTML = '<div class="jts-ld"><div class="jts-sp"></div><p>Pesquisando torrents para "<b>' + esc(q) + '</b>"...</p></div>';
+            resultsDiv.innerHTML = '<div class="jts-ld"><div class="jts-sp"></div><p>Pesquisando torrents em múltiplas fontes para "<b>' + esc(q) + '</b>"...</p></div>';
 
             apiSearch(q, cat).then(function (data) {
                 allResults = data.results || [];
@@ -215,6 +280,7 @@
                         '</div>' +
                     '</div>' +
                     '<div class="jts-rm">' +
+                        '<span class="jts-mi src">\uD83C\uDF10 ' + esc(r.sourceName || '1337x') + '</span>' +
                         '<span class="jts-mi">\uD83D\uDCE6 ' + r.sizeFormatted + '</span>' +
                         '<span class="jts-mi">\u2B06\uFE0F <span class="s">' + r.seeders + '</span></span>' +
                         '<span class="jts-mi">\u2B07\uFE0F <span class="l">' + r.leechers + '</span></span>' +
@@ -226,7 +292,7 @@
                 '</div>';
             }).join('');
 
-            // Magnet copy
+            // Action bindings (Magnet & qBit)
             resultsDiv.querySelectorAll('.jts-dm').forEach(function (btn) {
                 btn.onclick = function () {
                     var mag = decodeURIComponent(btn.dataset.mag);
@@ -239,7 +305,6 @@
                 };
             });
 
-            // qBittorrent download
             resultsDiv.querySelectorAll('.jts-dq').forEach(function (btn) {
                 btn.onclick = function () {
                     var mag = decodeURIComponent(btn.dataset.mag2);
@@ -260,7 +325,6 @@
         if (title) setTimeout(doSearch, 300);
     }
 
-    // Pega o título do item aberto
     function getTitle() {
         var sels = ['.itemName .parentNameLast', 'h3.itemName', '.itemName', 'h1'];
         for (var i = 0; i < sels.length; i++) {
@@ -270,7 +334,6 @@
         return '';
     }
 
-    // Injeta o botão nas páginas de itens
     function tryInject() {
         if (document.querySelector('#jts-btn')) return;
         var containers = ['.mainDetailButtons', '.detailButtons', '.itemMiscInfo'];
@@ -289,16 +352,12 @@
         container.appendChild(btn);
     }
 
-    // Inicialização
     function init() {
         injectCSS();
         tryInject();
-
-        // Observa mudanças de navegação (SPA)
         var observer = new MutationObserver(function () { tryInject(); });
         observer.observe(document.body, { childList: true, subtree: true });
-
-        console.log('[TorrentSearch] \uD83C\uDFAC Plugin carregado!');
+        console.log('[TorrentSearch v2.0] \uD83C\uDFAC Plugin carregado com Autocomplete e Multi-fontes!');
     }
 
     if (document.readyState === 'loading') {

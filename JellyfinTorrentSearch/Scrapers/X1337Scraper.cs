@@ -237,6 +237,7 @@ public class X1337Scraper
 public class TorrentResult
 {
     public string Title { get; set; } = string.Empty;
+    public string SourceName { get; set; } = "1337x";
     public string DetailUrl { get; set; } = string.Empty;
     public string MagnetUri { get; set; } = string.Empty;
     public int Seeders { get; set; }

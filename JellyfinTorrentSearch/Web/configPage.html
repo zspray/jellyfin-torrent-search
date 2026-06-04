@@ -55,10 +55,21 @@
                 <form class="torrentConfigForm">
                     <h3 class="sectionTitle">🔍 Configuração de Busca</h3>
 
+                    <div class="inputContainer checkboxContainer">
+                        <input type="checkbox" id="chkUseRedeTorrent" is="emby-checkbox" />
+                        <label for="chkUseRedeTorrent">Ativar RedeTorrent (Recomendado para PT-BR)</label>
+                    </div>
+
                     <div class="inputContainer">
+                        <label for="txtRedeTorrentDomain">Domínio da RedeTorrent</label>
+                        <input type="text" id="txtRedeTorrentDomain" is="emby-input" />
+                        <div class="fieldDescription">Ex: redetorrent.com, comando.la. Funciona com a maioria dos sites WP brasileiros.</div>
+                    </div>
+
+                    <div class="inputContainer" style="margin-top:20px;">
                         <label for="txtX1337Domain">Domínio do 1337x</label>
                         <input type="text" id="txtX1337Domain" is="emby-input" />
-                        <div class="fieldDescription">Domínio atual do 1337x (ex: 1337x.to). Altere se o site mudar de endereço.</div>
+                        <div class="fieldDescription">Domínio atual do 1337x (ex: 1337x.to).</div>
                     </div>
 
                     <div class="inputContainer">
@@ -117,6 +128,8 @@
 
                     ApiClient.getPluginConfiguration(TorrentSearchConfig.pluginUniqueId).then(function (config) {
                         config.X1337Domain = document.getElementById('txtX1337Domain').value;
+                        config.RedeTorrentDomain = document.getElementById('txtRedeTorrentDomain').value;
+                        config.UseRedeTorrent = document.getElementById('chkUseRedeTorrent').checked;
                         config.MaxResults = parseInt(document.getElementById('txtMaxResults').value) || 40;
                         config.PtBrOnly = document.getElementById('chkPtBrOnly').checked;
                         config.QBitUrl = document.getElementById('txtQBitUrl').value;
@@ -134,6 +147,8 @@
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(TorrentSearchConfig.pluginUniqueId).then(function (config) {
                     document.getElementById('txtX1337Domain').value = config.X1337Domain || '1337x.to';
+                    document.getElementById('txtRedeTorrentDomain').value = config.RedeTorrentDomain || 'redetorrent.com';
+                    document.getElementById('chkUseRedeTorrent').checked = config.UseRedeTorrent !== false; // default true
                     document.getElementById('txtMaxResults').value = config.MaxResults || 40;
                     document.getElementById('chkPtBrOnly').checked = config.PtBrOnly || false;
                     document.getElementById('txtQBitUrl').value = config.QBitUrl || '';
