@@ -1,6 +1,6 @@
 # 🎬 Jellyfin Torrent Search PT-BR
 
-[![Build & Release](https://github.com/SEU-USUARIO/jellyfin-torrent-search/actions/workflows/release.yml/badge.svg)](https://github.com/SEU-USUARIO/jellyfin-torrent-search/actions)
+[![Build & Release](https://github.com/zspray/jellyfin-torrent-search/actions/workflows/release.yml/badge.svg)](https://github.com/zspray/jellyfin-torrent-search/actions)
 
 Plugin para o Jellyfin que busca torrents **PT-BR** (dublado, legendado, dual áudio) diretamente da interface, sem nenhuma dependência externa.
 
@@ -27,14 +27,14 @@ Plugin para o Jellyfin que busca torrents **PT-BR** (dublado, legendado, dual á
 2. Clique em **➕ (Adicionar)**
 3. Preencha:
    - **Nome:** `Torrent Search PT-BR`
-   - **URL:** `https://raw.githubusercontent.com/SEU-USUARIO/jellyfin-torrent-search/main/manifest.json`
+   - **URL:** `https://raw.githubusercontent.com/zspray/jellyfin-torrent-search/main/manifest.json`
 4. Clique em **Salvar**
 5. Vá na aba **Catálogo**, encontre "Torrent Search PT-BR" e clique em **Instalar**
 6. Reinicie o Jellyfin
 
 ### Instalação Manual
 
-1. Baixe o `.zip` da [última release](https://github.com/SEU-USUARIO/jellyfin-torrent-search/releases/latest)
+1. Baixe o `.zip` da [última release](https://github.com/zspray/jellyfin-torrent-search/releases/latest)
 2. Extraia os arquivos na pasta de plugins do Jellyfin:
    - **Windows:** `C:\ProgramData\Jellyfin\Server\plugins\TorrentSearch\`
    - **Linux:** `/var/lib/jellyfin/plugins/TorrentSearch/`
